@@ -1,0 +1,26 @@
+package:
+  name: sjablong
+  dependencies:
+    - canvas
+    - console
+    - debug
+    - effect
+    - foldable-traversable
+    - numbers
+    - parsing
+    - partial
+    - prelude
+    - record
+    - refs
+    - strings
+    - stringutils
+    - unlift
+    - web-dom
+    - web-events
+    - web-file
+    - web-html
+    - web-touchevents
+    - web-uievents
+workspace:
+  packageSet:
+    registry: 66.5.0
