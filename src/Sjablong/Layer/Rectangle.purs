@@ -1,6 +1,7 @@
 module Sjablong.Layer.Rectangle
   ( RectangleLayer(..)
   , mkRectangleLayer
+  , setFillStyle
   ) where
 
 import Prelude
@@ -18,6 +19,9 @@ newtype RectangleLayer = RectangleLayer
 
 mkRectangleLayer :: Rectangle -> String -> RectangleLayer
 mkRectangleLayer rect fillStyle = RectangleLayer { rect, fillStyle, dragOffset: Nothing }
+
+setFillStyle :: String -> RectangleLayer -> RectangleLayer
+setFillStyle fillStyle (RectangleLayer l) = RectangleLayer l { fillStyle = fillStyle }
 
 instance Applicative m => Layer m RectangleLayer where
   position (RectangleLayer layer) = pure { x: layer.rect.x, y: layer.rect.y }
