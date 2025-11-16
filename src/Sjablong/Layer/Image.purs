@@ -3,6 +3,7 @@ module Sjablong.Layer.Image
   , mkImageLayer
   , mkEmptyImageLayer
   , loadImage
+  , setPosition
   , dimensions
   , getScale
   , setScale
@@ -54,6 +55,9 @@ loadImage :: forall @m. MonadEffect m => String -> ImageLayer -> m ImageLayer
 loadImage path (ImageLayer i) = do
   liftEffect $ Canvas.tryLoadImage path $ flip Ref.modify_ i.image <<< const
   pure $ ImageLayer i
+
+setPosition :: Point -> ImageLayer -> ImageLayer
+setPosition position (ImageLayer l) = ImageLayer l { position = position }
 
 dimensions :: forall m. MonadEffect m => ImageLayer -> m (Maybe Dimensions)
 dimensions (ImageLayer i) = do
