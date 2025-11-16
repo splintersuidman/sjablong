@@ -70,3 +70,7 @@ scalePreserveRatio s = scale { scaleX: s, scaleY: s }
 
 class LayerWrapper (w :: Type -> Type) where
   mapLayerWrapper :: forall m l. Layer m l => Monad m => (l -> m l) -> w l -> m (w l)
+
+-- TODO: swap with mapLayerWrapper
+modifyLayerWrapper :: forall @w @m l. LayerWrapper w => Layer m l => Monad m => (l -> l) -> w l -> m (w l)
+modifyLayerWrapper f = mapLayerWrapper (pure <<< f)
