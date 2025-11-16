@@ -15,6 +15,7 @@ module Sjablong.Main
   , connectCheckboxPure
   , connectTextArea
   , connectTextAreaPure
+  , listenSelect
   , connectSelect
   , connectSelectPure
   , connectRange
@@ -329,18 +330,20 @@ connectCheckbox { document } id layer k = unsafePartial do
 connectCheckboxPure :: forall l. TemplateContext -> String -> RefLayer l -> (Boolean -> l -> l) -> Effect Unit
 connectCheckboxPure ctx id layer k = connectCheckbox ctx id layer ((pure <<< _) <<< k)
 
-connectSelect :: forall l. TemplateContext -> String -> RefLayer l -> (String -> l -> Effect l) -> Effect Unit
-connectSelect { document } id layer k = unsafePartial do
+-- XXX: a similar abstraction can be applied to the other connect functions
+listenSelect :: TemplateContext -> String -> (String -> Effect Unit) -> Effect Unit
+listenSelect { document } id k = unsafePartial do
   Just element <- Dom.getElementById id $ Html.toNonElementParentNode document
   let Just selectElement = Select.fromElement element
 
   initialValue <- Select.value selectElement
-  RefLayer.modifyM_ (k initialValue) layer
+  k initialValue
 
-  selectListener <- Event.eventListener \_ -> do
-    value <- Select.value selectElement
-    RefLayer.modifyM_ (k value) layer
+  selectListener <- Event.eventListener \_ -> k =<< Select.value selectElement
   Event.addEventListener (EventType "input") selectListener false $ Dom.toEventTarget element
+
+connectSelect :: forall l. TemplateContext -> String -> RefLayer l -> (String -> l -> Effect l) -> Effect Unit
+connectSelect ctx id layer k = listenSelect ctx id $ \value -> RefLayer.modifyM_ (k value) layer
 
 connectSelectPure :: forall l. TemplateContext -> String -> RefLayer l -> (String -> l -> l) -> Effect Unit
 connectSelectPure ctx id layer k = connectSelect ctx id layer ((pure <<< _) <<< k)
