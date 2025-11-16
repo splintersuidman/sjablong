@@ -3,6 +3,10 @@ module Sjablong.Layer.Layers
   , mkLayers
   , addLayerBelow
   , addLayerAbove
+  , SomeLayers(..)
+  , mkSomeLayers
+  , addSomeLayerBelow
+  , addSomeLayerAbove
   ) where
 
 import Prelude
@@ -19,21 +23,32 @@ import Data.Traversable (traverse)
 import Graphics.Canvas as Canvas
 import Sjablong.Layer (class Layer, SomeLayer, containsPoint, drag, dragEnd, dragStart, draw, mkSomeLayer, position, translate)
 
-newtype Layers m = Layers
-  { layers :: Array (SomeLayer m)
+newtype Layers l = Layers
+  { layers :: Array l
   , dragIndex :: Maybe Int
   }
 
-mkLayers :: forall @m. Array (SomeLayer m) -> Layers m
+type SomeLayers m = Layers (SomeLayer m)
+
+mkLayers :: forall @l. Array l -> Layers l
 mkLayers layers = Layers { layers, dragIndex: Nothing }
 
-addLayerBelow :: forall m l. Layer m l => l -> Layers m -> Layers m
-addLayerBelow layer (Layers l) = Layers l { layers = Array.snoc l.layers (mkSomeLayer layer) }
+addLayerBelow :: forall l. l -> Layers l -> Layers l
+addLayerBelow layer (Layers l) = Layers l { layers = Array.snoc l.layers layer }
 
-addLayerAbove :: forall m l. Layer m l => l -> Layers m -> Layers m
-addLayerAbove layer (Layers l) = Layers l { layers = Array.cons (mkSomeLayer layer) l.layers }
+addLayerAbove :: forall l. l -> Layers l -> Layers l
+addLayerAbove layer (Layers l) = Layers l { layers = Array.cons layer l.layers }
 
-instance Monad m => Layer m (Layers m) where
+mkSomeLayers :: forall @m. Array (SomeLayer m) -> SomeLayers m
+mkSomeLayers = mkLayers
+
+addSomeLayerBelow :: forall m l. Layer m l => l -> SomeLayers m -> SomeLayers m
+addSomeLayerBelow layer (Layers l) = Layers l { layers = Array.snoc l.layers (mkSomeLayer layer) }
+
+addSomeLayerAbove :: forall m l. Layer m l => l -> SomeLayers m -> SomeLayers m
+addSomeLayerAbove layer (Layers l) = Layers l { layers = Array.cons (mkSomeLayer layer) l.layers }
+
+instance (Monad m, Layer m l) => Layer m (Layers l) where
   position = const $ pure { x: 0.0, y: 0.0 }
   translate t (Layers l) = traverse (translate t) l.layers <#> \layers -> Layers l { layers = layers }
   containsPoint p (Layers l) = or <$> traverse (containsPoint p) l.layers

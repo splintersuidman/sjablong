@@ -1,6 +1,8 @@
 module Sjablong.Layer.Group
   ( Group(..)
   , mkGroup
+  , SomeGroup(..)
+  , mkSomeGroup
   ) where
 
 import Prelude
@@ -12,20 +14,25 @@ import Data.Traversable (traverse)
 import Graphics.Canvas as Canvas
 import Sjablong.Layer (class Layer, DragOffset, Point, SomeLayer, containsPoint, dragTranslateMaybe, draw, translatePoint)
 
-newtype Group m = Group
-  { layers :: Array (SomeLayer m)
+newtype Group l = Group
+  { layers :: Array l
   , position :: Point
   , dragOffset :: Maybe DragOffset
   }
 
-mkGroup :: forall @m. Array (SomeLayer m) -> Group m
+mkGroup :: forall @l. Array l -> Group l
 mkGroup layers = Group
   { layers
   , position: { x: 0.0, y: 0.0 }
   , dragOffset: Nothing
   }
 
-instance Monad m => Layer m (Group m) where
+type SomeGroup m = Group (SomeLayer m)
+
+mkSomeGroup :: forall @m. Array (SomeLayer m) -> SomeGroup m
+mkSomeGroup = mkGroup
+
+instance (Monad m, Layer m l) => Layer m (Group l) where
   position (Group l) = pure l.position
   translate t (Group l) = pure $ Group l { position = translatePoint t l.position }
   containsPoint p (Group l) = or <$> traverse (containsPoint (p - l.position)) l.layers
