@@ -1,4 +1,10 @@
-module Graphics.Canvas.TextMetrics where
+module Graphics.Canvas.TextMetrics
+  ( TextMetrics(..)
+  , measureText
+  , textMetricsBoundingBoxHeight
+  ) where
+
+import Prelude
 
 import Effect (Effect)
 import Graphics.Canvas (Context2D)
@@ -19,3 +25,6 @@ type TextMetrics =
   }
 
 foreign import measureText :: Context2D -> String -> Effect TextMetrics
+
+textMetricsBoundingBoxHeight :: TextMetrics -> Number
+textMetricsBoundingBoxHeight metrics = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent

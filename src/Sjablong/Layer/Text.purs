@@ -44,7 +44,7 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Graphics.Canvas (Context2D, TextAlign(..), TextBaseline(..), fillText, withContext)
 import Graphics.Canvas (setFillStyle, setFont, setTextAlign, setTextBaseline) as Canvas
 import Graphics.Canvas.Extra (setLetterSpacing) as Canvas
-import Graphics.Canvas.TextMetrics (TextMetrics, measureText)
+import Graphics.Canvas.TextMetrics (TextMetrics, measureText, textMetricsBoundingBoxHeight)
 import Sjablong.Layer (class Layer, DragOffset, Point, dragTranslateMaybe, translatePoint)
 
 newtype TextLayer = TextLayer
@@ -107,11 +107,9 @@ instance MonadEffect m => Layer m TextLayer where
     for_ layout.lines \line -> for_ line.words \{ word, position: { x, y } } ->
       fillText ctx word x y
 
+-- XXX: measure based on alphabetic baseline?
 measureTextHeight :: Context2D -> String -> Effect Number
-measureTextHeight ctx text = do
-  metrics <- measureText ctx text
-  -- XXX: measure based on alphabetic baseline?
-  pure $ metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
+measureTextHeight ctx text = textMetricsBoundingBoxHeight <$> measureText ctx text
 
 measureTextWidth :: Context2D -> String -> Effect Number
 measureTextWidth ctx text = do
@@ -203,15 +201,16 @@ layoutText (TextLayer layer) = withContext layer.context do
     Just maxWidth -> wrapLines layer.context maxWidth layer.text
     Nothing -> stringToLines layer.context layer.text
   lineTextHeight <- measureMaxLineHeight layer.context lines
-  pure $ layoutLines layer.position layer.align layer.baseline layer.lineHeight lineTextHeight lines
+  pure $ layoutLines layer.position layer.fontSize layer.align layer.baseline layer.lineHeight lineTextHeight lines
 
--- TODO: take baseline into account
 -- TODO: take direction into account (for AlignStart and AlignEnd)
-layoutLines :: Point -> TextAlign -> TextBaseline -> Number -> Number -> Array Line -> LayoutText
-layoutLines position align baseline lineHeight lineTextHeight lines =
+layoutLines :: Point -> Number -> TextAlign -> TextBaseline -> Number -> Number -> Array Line -> LayoutText
+layoutLines position fontSize align baseline lineHeight lineTextHeight lines =
   { position
   , lines: Array.enumerate lines <#> \(i /\ line) ->
       let
+        totalHeight = lineTextHeight * toNumber (Array.length lines) + (lineHeight - 1.0) * fontSize * toNumber (Array.length lines - 1)
+
         -- XXX: support other baselines
         -- XXX: maybe add another property indicating whether the text
         -- should be anchored at the top or bottom, and use baseline
@@ -219,7 +218,7 @@ layoutLines position align baseline lineHeight lineTextHeight lines =
         -- block)
         y = case baseline of
           BaselineTop -> position.y + toNumber i * lineTextHeight * lineHeight
-          BaselineBottom -> position.y - toNumber (Array.length lines - i - 1) * lineTextHeight * lineHeight
+          BaselineBottom -> position.y - totalHeight + toNumber i * lineTextHeight * lineHeight
           _ -> position.y + toNumber i * lineTextHeight * lineHeight
         x = case align of
           AlignStart -> position.x
