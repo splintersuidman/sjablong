@@ -431,5 +431,5 @@ layoutMarkupFragment :: Point -> MarkupFragment -> LayoutMarkupFragment
 layoutMarkupFragment { x, y } { fragment, metrics } =
   { fragment
   , metrics
-  , position: { x, y: y - metrics.fontBoundingBoxAscent }
+  , position: { x, y: y + metrics.actualBoundingBoxAscent }
   }

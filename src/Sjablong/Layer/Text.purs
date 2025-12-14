@@ -253,5 +253,5 @@ layoutWord :: Point -> Word -> LayoutWord
 layoutWord { x, y } { word, metrics } =
   { word
   , metrics
-  , position: { x, y: y - metrics.fontBoundingBoxAscent }
+  , position: { x, y: y + metrics.actualBoundingBoxAscent }
   }
